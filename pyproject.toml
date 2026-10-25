@@ -1,0 +1,19 @@
+[project]
+name = "freelance-pipeline"
+version = "0.1.0"
+description = "Veille d'offres freelance, scoring et generation de propositions"
+requires-python = ">=3.11"
+dependencies = [
+    "requests>=2.28.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.scripts]
+fp = "freelance.cli:main"
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["freelance"]

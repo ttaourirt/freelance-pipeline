@@ -1,0 +1,22 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+build/
+dist/
+
+# Secrets — ne jamais committer
+.env
+.env.local
+
+# Config personnelle (le modele public est config.example.toml)
+config.toml
+
+# Donnees locales
+data/
+output/
+
+# macOS
+.DS_Store

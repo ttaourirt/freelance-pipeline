@@ -1,0 +1,45 @@
+# Copie ce fichier en config.toml et adapte-le.
+# C'est le seul fichier a remplir pour que le scoring et les propositions soient utiles.
+
+[profile]
+name = "Taourirt"
+email = "ton.email@exemple.fr"
+timezone = "Europe/Paris"
+languages = ["en", "fr"]
+
+# Une phrase. Ce que tu fais, pour qui. Pas de "passionne par".
+positioning = "I build small Python automations and internal tools for small teams that still do things by hand."
+
+# 500-900 EUR, forfait par projet. Ajuste apres tes 3 premieres ventes.
+rate = "EUR 500-900 fixed price per project"
+
+# Mets tes vraies competences. Le scoring cherche ces mots dans les titres d'offres.
+skills = [
+  "Python",
+  "automation",
+  "web",
+  "data",
+  "API",
+  "scraping",
+  "dashboard",
+]
+
+# Indispensable : sans lien, les propositions sont faibles.
+# Un GitHub avec 2 projets reels vaut mieux que 10 liens.
+portfolio = []
+github = "https://github.com/ton-compte"
+linkedin = "https://www.linkedin.com/in/ton-compte"
+
+[filters]
+sources = ["remotive", "himalayas", "remoteok"]
+job_types = ["contract", "freelance", "contractor"]
+allow_unknown_type = true
+exclude_keywords = [
+  "unpaid",
+  "equity only",
+  "commission only",
+  "internship",
+  "volunteer",
+  "must be based in the us",
+]
+min_score = 55

@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Taourirt — Python automation &amp; internal tools</title>
+<meta name="description" content="I build small Python automations and internal tools for small teams that still do things by hand. Fixed price, short cycles.">
+<meta property="og:title" content="Taourirt — Python automation &amp; internal tools">
+<meta property="og:description" content="Small, reliable automations for small teams. Fixed price, short cycles.">
+<meta property="og:type" content="website">
+<style>
+  :root{
+    --ink:#14110f;
+    --ink-soft:#4a4642;
+    --line:#dcd7cf;
+    --bg:#faf8f4;
+    --card:#ffffff;
+    --accent:#15503a;
+    --accent-soft:#e7efe9;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+    --max:1080px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font-family:var(--sans);font-size:17px;line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit}
+  .wrap{max-width:var(--max);margin:0 auto;padding:0 24px}
+  .label{
+    font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--ink-soft);
+  }
+
+  /* ---------- nav ---------- */
+  header{border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(250,248,244,.92);backdrop-filter:blur(8px);z-index:10}
+  nav{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:16px 0}
+  .brand{font-weight:650;letter-spacing:-.02em;font-size:16px;text-decoration:none}
+  .navlinks{display:flex;gap:22px;align-items:center}
+  .navlinks a{text-decoration:none;font-size:14.5px;color:var(--ink-soft)}
+  .navlinks a:hover{color:var(--ink)}
+  .status{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  @media(max-width:760px){.navlinks{display:none}}
+
+  /* ---------- hero ---------- */
+  .hero{padding:88px 0 72px;border-bottom:1px solid var(--line)}
+  .hero-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:64px;align-items:start}
+  h1{
+    font-size:clamp(34px,4.6vw,54px);line-height:1.06;letter-spacing:-.035em;
+    margin:16px 0 22px;font-weight:680;
+  }
+  h1 em{font-style:normal;color:var(--accent)}
+  .lede{font-size:19px;color:var(--ink-soft);margin:0 0 32px;max-width:34em}
+  .cta{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+  .btn{
+    display:inline-block;padding:13px 22px;border-radius:6px;text-decoration:none;
+    font-size:15px;font-weight:560;border:1px solid var(--ink);
+    background:var(--ink);color:#fff;transition:transform .12s ease,opacity .12s ease;
+  }
+  .btn:hover{transform:translateY(-1px);opacity:.92}
+  .btn.ghost{background:transparent;color:var(--ink)}
+  .btn.ghost:hover{background:#fff}
+
+  .term{
+    background:#14110f;border-radius:8px;padding:20px 20px 18px;color:#e8e4dd;
+    font-family:var(--mono);font-size:12.5px;line-height:1.85;overflow-x:auto;
+  }
+  .term .bar{display:flex;gap:6px;margin-bottom:14px}
+  .term .bar i{width:9px;height:9px;border-radius:50%;background:#3a3530;display:block}
+  .term .c{color:#8f877c}
+  .term .g{color:#7ec699}
+  .term .y{color:#e3b341}
+  .term .r{color:#e06c75}
+
+  @media(max-width:900px){
+    .hero-grid{grid-template-columns:1fr;gap:40px}
+    .hero{padding:56px 0 48px}
+  }
+
+  /* ---------- sections ---------- */
+  section{padding:76px 0;border-bottom:1px solid var(--line)}
+  .sec-head{display:flex;justify-content:space-between;align-items:baseline;gap:24px;margin-bottom:36px;flex-wrap:wrap}
+  h2{font-size:clamp(24px,2.6vw,32px);letter-spacing:-.025em;margin:8px 0 0;font-weight:660}
+  .sec-note{color:var(--ink-soft);font-size:15px;max-width:30em;margin:0}
+
+  /* ---------- services ---------- */
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:26px 24px}
+  .card h3{font-size:17px;margin:0 0 10px;letter-spacing:-.01em;font-weight:640}
+  .card p{margin:0;color:var(--ink-soft);font-size:15px}
+  .price{
+    display:inline-block;margin-top:18px;font-family:var(--mono);font-size:12.5px;
+    color:var(--accent);background:var(--accent-soft);padding:5px 10px;border-radius:4px;
+  }
+  @media(max-width:860px){.grid3{grid-template-columns:1fr}}
+
+  /* ---------- case studies ---------- */
+  .case{
+    background:var(--card);border:1px solid var(--line);border-radius:8px;
+    padding:32px;margin-bottom:20px;
+  }
+  .case-top{display:flex;justify-content:space-between;gap:20px;align-items:baseline;flex-wrap:wrap;margin-bottom:6px}
+  .case h3{font-size:21px;margin:0;letter-spacing:-.02em;font-weight:650}
+  .tag{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);border:1px solid var(--line);padding:4px 9px;border-radius:999px;white-space:nowrap}
+  .case dl{display:grid;grid-template-columns:110px 1fr;gap:10px 20px;margin:22px 0 0}
+  .case dt{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);padding-top:3px}
+  .case dd{margin:0;font-size:15.5px}
+  .stack{display:flex;gap:7px;flex-wrap:wrap;margin-top:4px}
+  .chip{font-family:var(--mono);font-size:11.5px;background:#f2efe9;border:1px solid var(--line);border-radius:4px;padding:3px 8px;color:var(--ink-soft)}
+  .honest{
+    margin-top:20px;padding:14px 16px;border-left:3px solid var(--accent);
+    background:var(--accent-soft);border-radius:0 6px 6px 0;font-size:14.5px;
+  }
+  @media(max-width:620px){
+    .case{padding:22px 20px}
+    .case h3{font-size:19px}
+    .case dl{grid-template-columns:1fr;gap:2px}
+    .case dt{margin-top:16px}
+    .case dd{font-size:15px}
+    .case dl dt:first-of-type{margin-top:4px}
+  }
+
+  /* ---------- process ---------- */
+  .steps{counter-reset:s;display:grid;grid-template-columns:repeat(4,1fr);gap:24px}
+  .step{counter-increment:s;padding-top:20px;border-top:2px solid var(--ink)}
+  .step::before{
+    content:"0" counter(s);font-family:var(--mono);font-size:12px;letter-spacing:.1em;
+    color:var(--accent);display:block;margin-bottom:10px;
+  }
+  .step h4{margin:0 0 6px;font-size:15.5px;font-weight:640}
+  .step p{margin:0;font-size:14.5px;color:var(--ink-soft)}
+  @media(max-width:860px){.steps{grid-template-columns:1fr 1fr}}
+  @media(max-width:560px){.steps{grid-template-columns:1fr}}
+
+  /* ---------- faq ---------- */
+  details{border-bottom:1px solid var(--line);padding:18px 0}
+  details:first-of-type{border-top:1px solid var(--line)}
+  summary{cursor:pointer;font-weight:580;font-size:16.5px;list-style:none;display:flex;justify-content:space-between;gap:16px}
+  summary::-webkit-details-marker{display:none}
+  summary::after{content:"+";font-family:var(--mono);color:var(--ink-soft)}
+  details[open] summary::after{content:"–"}
+  details p{margin:12px 0 0;color:var(--ink-soft);font-size:15.5px;max-width:46em}
+
+  /* ---------- contact ---------- */
+  .contact{background:var(--ink);color:#f3efe8;border-bottom:none}
+  .contact h2{color:#fff}
+  .contact p{color:#b8b2a8}
+  .contact .btn{background:#fff;color:var(--ink);border-color:#fff}
+  .contact .btn.ghost{background:transparent;color:#f3efe8;border-color:#4a4642}
+  .mail{
+    font-family:var(--mono);font-size:clamp(19px,3vw,30px);letter-spacing:-.01em;
+    color:#fff;text-decoration:none;border-bottom:1px solid #4a4642;padding-bottom:3px;
+  }
+  .mail:hover{border-color:#fff}
+  footer{padding:26px 0;font-size:13.5px;color:var(--ink-soft);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <nav>
+      <a class="brand" href="#top">Taourirt</a>
+      <div class="navlinks">
+        <a href="#work">Work</a>
+        <a href="#services">Services</a>
+        <a href="#process">Process</a>
+        <a href="#faq">FAQ</a>
+        <a class="status" href="#contact"><span class="dot"></span>Open for projects</a>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+
+  <div class="wrap">
+    <div class="hero">
+      <div class="hero-grid">
+        <div>
+          <div class="label">Python · automation · internal tools</div>
+          <h1>Your team still does it <em>by hand</em>. I make it run once and forget it.</h1>
+          <p class="lede">
+            I build small, reliable tools that remove one repetitive job at a time:
+            a broken form that loses requests, a report assembled in Excel every Monday,
+            a folder of PDFs nobody has time to read. Fixed price, short cycles, no
+            six-month engagement.
+          </p>
+          <div class="cta">
+            <a class="btn" href="#contact">Describe your problem</a>
+            <a class="btn ghost" href="#work">See the work</a>
+          </div>
+        </div>
+
+        <div class="term" aria-hidden="true">
+          <div class="bar"><i></i><i></i><i></i></div>
+          <div><span class="c"># what you have today</span></div>
+          <div><span class="r">09:12</span> open 6 spreadsheets</div>
+          <div><span class="r">09:41</span> copy 240 rows by hand</div>
+          <div><span class="r">10:03</span> one typo. start over.</div>
+          <div>&nbsp;</div>
+          <div><span class="c"># what you get</span></div>
+          <div><span class="g">09:00</span> report already in your inbox</div>
+          <div><span class="g">09:00</span> 0 rows copied, 0 typos</div>
+          <div><span class="y">~40h</span> given back per quarter</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section id="services">
+    <div class="wrap">
+      <div class="sec-head">
+        <div>
+          <div class="label">Services</div>
+          <h2>Three things I do well</h2>
+        </div>
+        <p class="sec-note">One project, one deliverable, one price agreed before I start. If it does not fit in a fixed price, I say so.</p>
+      </div>
+
+      <div class="grid3">
+        <div class="card">
+          <h3>Automate a manual task</h3>
+          <p>Scraping, file conversion, data sync between two tools, scheduled reports. Anything your team does the same way more than twice a week.</p>
+          <span class="price">from €500</span>
+        </div>
+        <div class="card">
+          <h3>Build a small internal tool</h3>
+          <p>A focused web app your team actually uses: form, dashboard, admin panel. Not a platform — the one screen that replaces the spreadsheet.</p>
+          <span class="price">from €900</span>
+        </div>
+        <div class="card">
+          <h3>Rescue an existing codebase</h3>
+          <p>Audit, written findings, then targeted fixes. Useful when a previous project was abandoned, or when the original developer is gone.</p>
+          <span class="price">from €500</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="work">
+    <div class="wrap">
+      <div class="sec-head">
+        <div>
+          <div class="label">Selected work</div>
+          <h2>Two projects, described honestly</h2>
+        </div>
+        <p class="sec-note">Self-directed projects, not client assignments. They show how I build and how I measure — including what does not work yet.</p>
+      </div>
+
+      <article class="case">
+        <div class="case-top">
+          <h3>Invoice extraction agent — measured against a baseline</h3>
+          <span class="tag">Personal project</span>
+        </div>
+        <dl>
+          <dt>Problem</dt>
+          <dd>A bookkeeper receives a few hundred supplier invoices a month and retypes them into a
+              spreadsheet. The cost is not the typing, it is the errors nobody catches.</dd>
+
+          <dt>What I built</dt>
+          <dd>An agent that reads a PDF, extracts twelve fields, checks them against business rules,
+              and sends back for human review the fields it could not read with certainty.
+              Ships with a regex baseline on the same test set, so the result is a comparison, not a claim.</dd>
+
+          <dt>Decisions</dt>
+          <dd>The tool loop is written by hand — no framework — so every step is explainable. The schema
+              rejects incoherent totals (excl. tax + VAT must equal the total) and returns the error to the
+              model, which re-reads the document instead of guessing. The test set has four invoice
+              templates, because one template flatters every approach.</dd>
+
+          <dt>Result</dt>
+          <dd><strong>97 % field accuracy, 7 of 8 documents perfect</strong>, against 22 % for the regex
+              baseline. One silent failure on an ambiguous US date is documented in the README rather
+              than hidden — that failure is what the next iteration fixes.</dd>
+
+          <dt>Stack</dt>
+          <dd><div class="stack">
+            <span class="chip">Python</span><span class="chip">Pydantic</span>
+            <span class="chip">Tool calling</span><span class="chip">Langfuse</span>
+            <span class="chip">pypdf</span><span class="chip">ReportLab</span>
+          </div></dd>
+        </dl>
+        <div class="honest">
+          <strong>Limitation:</strong> text-based PDFs only — scanned documents need an OCR step first.
+          The 8-document test set proves the pipeline, not accuracy on your suppliers.
+        </div>
+      </article>
+
+      <article class="case">
+        <div class="case-top">
+          <h3>Video factory — one command, finished video</h3>
+          <span class="tag">Personal project</span>
+        </div>
+        <dl>
+          <dt>Problem</dt>
+          <dd>Publishing two videos a week means four hours each of scripting, voice-over, editing and
+              subtitles. Most of that time is mechanical, not creative.</dd>
+
+          <dt>What I built</dt>
+          <dd>A command line tool that takes a topic and produces the finished piece: script, voice-over,
+              generated visuals, word-level subtitles, edited MP4, thumbnail and metadata. Each step is
+              resumable, so a failure costs one step instead of the whole run.</dd>
+
+          <dt>Decisions</dt>
+          <dd>Visuals are generated locally — no stock footage, no licensing questions. Subtitles are burned
+              in as image overlays because the ffmpeg build on this machine ships without libass; finding
+              that out took an hour, and working around it took twenty minutes.</dd>
+
+          <dt>Result</dt>
+          <dd>A 75-second pilot renders in about a minute on a laptop, with no paid service called.
+              The output is watchable but generic — the human part still has to be added by hand,
+              which is honest and is exactly what I tell clients.</dd>
+
+          <dt>Stack</dt>
+          <dd><div class="stack">
+            <span class="chip">Python</span><span class="chip">ffmpeg</span>
+            <span class="chip">edge-tts</span><span class="chip">Pillow</span><span class="chip">LLM</span>
+          </div></dd>
+        </dl>
+      </article>
+    </div>
+  </section>
+
+  <section id="process">
+    <div class="wrap">
+      <div class="sec-head">
+        <div>
+          <div class="label">How it works</div>
+          <h2>Four steps, no surprises</h2>
+        </div>
+        <p class="sec-note">You always know what happens next and what it costs. If a step reveals the project is not worth doing, I tell you.</p>
+      </div>
+
+      <div class="steps">
+        <div class="step">
+          <h4>You describe the task</h4>
+          <p>Not the solution — the task. How often, who does it, how long it takes today.</p>
+        </div>
+        <div class="step">
+          <h4>I send a scope and a price</h4>
+          <p>One page: what is in, what is out, what it costs, when it is delivered. Fixed.</p>
+        </div>
+        <div class="step">
+          <h4>You see something working</h4>
+          <p>A first runnable version early, not a slide deck. You correct it before it is finished.</p>
+        </div>
+        <div class="step">
+          <h4>Handover</h4>
+          <p>Code, a short README, and a walkthrough. You are not locked in to me.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="faq">
+    <div class="wrap">
+      <div class="sec-head">
+        <div>
+          <div class="label">Questions</div>
+          <h2>Before you write</h2>
+        </div>
+      </div>
+
+      <details>
+        <summary>Do you work with clients outside France?</summary>
+        <p>Yes. I work in French and English, remotely, from the Paris timezone. Overlap with European
+           and US East Coast hours is easy. Calls in English do not need to be slow — I write the
+           important parts down so nothing depends on a misunderstanding.</p>
+      </details>
+
+      <details>
+        <summary>What does €500 to €900 actually buy?</summary>
+        <p>Roughly two to four days of work: one clear problem, solved, tested, and documented. That is
+           the range where a fixed price stays honest. If your project needs two weeks, I will tell you
+           before you pay anything, and split it into two milestones.</p>
+      </details>
+
+      <details>
+        <summary>You have no client testimonials yet. Why should I trust you?</summary>
+        <p>You should not, on my word alone. So: the first step is small. I send a written scope, you
+           approve it, and you see a working version before payment. If the first small piece is not
+           good, you have lost a few days, not a budget. The two projects above explain what I build
+           and how I document it — that is the only proof I have today.</p>
+      </details>
+
+      <details>
+        <summary>What do you need from me to start?</summary>
+        <p>Access to whatever the task touches (or an export of it), one person who can answer
+           questions, and a decision-maker for the scope. No long meetings.</p>
+      </details>
+
+      <details>
+        <summary>Do you use AI to write the code?</summary>
+        <p>Yes, as a tool — the same way I use a debugger or documentation. I review, test, and take
+           responsibility for everything delivered. The audit above is a good example: the report is
+           generated by a script I wrote, and every claim in it is verified by hand.</p>
+      </details>
+    </div>
+  </section>
+
+  <section class="contact" id="contact">
+    <div class="wrap">
+      <div class="label" style="color:#8f877c">Contact</div>
+      <h2 style="margin-bottom:14px">Tell me what your team does by hand.</h2>
+      <p style="max-width:38em;margin:0 0 28px">
+        Two sentences is enough: what the task is, and how often it happens.
+        I answer within one working day, with an honest yes or no.
+      </p>
+      <a class="mail" href="mailto:you@example.com">you@example.com</a>
+      <div style="margin-top:32px;display:flex;gap:12px;flex-wrap:wrap">
+        <a class="btn" href="mailto:you@example.com?subject=Small%20automation%20project">Send an email</a>
+        <a class="btn ghost" href="https://github.com/your-account" rel="noopener">GitHub</a>
+      </div>
+    </div>
+  </section>
+
+  <div class="wrap">
+    <footer>
+      <span>Taourirt — Python automation &amp; internal tools</span>
+      <span>Paris timezone · works in English and French</span>
+    </footer>
+  </div>
+
+</main>
+</body>
+</html>
