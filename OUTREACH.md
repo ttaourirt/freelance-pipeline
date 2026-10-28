@@ -3,6 +3,77 @@
 Le pipeline ne fait pas le travail difficile à ta place : **trouver 10 entreprises par jour
 qui ont un problème visible et payant**. Voici comment, légalement.
 
+---
+
+## A. Répondre à une offre publiée (commence par là)
+
+C'est plus facile que le démarchage : la demande est explicite, la personne cherche déjà.
+Deux inconvénients : tu es en concurrence (5 à 20 réponses par offre), et le prix se
+négocie souvent à la baisse.
+
+### Où sont les vraies offres de mission
+
+| Source | Ce que tu y trouves | Accès |
+| --- | --- | --- |
+| **Codeur.com** | projets freelance FR, budget souvent affiché, flux mis à jour en continu | ✅ **intégré** : `fp fetch --sources codeur` |
+| **Malt** | la plus grosse place de marché FR, missions de 1 à 6 mois | Alertes email (gratuit) — pas d'API, scraping interdit |
+| **ComeUp** | missions courtes, réponse avec devis | Compte gratuit |
+| **Freelance-Info** | annonces FR, beaucoup de missions courtes | Inscription + alertes |
+| **Upwork / Freelancer** | volume mondial, tarifs tirés vers le bas | Compte gratuit, commissions ~10-20 % |
+| **LinkedIn** | posts « je cherche un freelance pour… » | Manuel, mais très réactif |
+
+**Malt : active les alertes email** sur tes mots-clés (python, automatisation, scraping,
+intégration API). Chaque matin, les nouvelles missions arrivent dans ta boîte. C'est le
+remplaçant légal de l'API qui n'existe pas.
+
+### Le workflow, 6 minutes par offre
+
+```bash
+# 1. lundi matin
+fp fetch --sources codeur
+fp score --limit 40
+fp list --min-score 60
+
+# 2. tu lis une offre
+fp show 12
+
+# 3. tu colles le texte de la mission (depuis Malt, un mail, un post)
+pbpaste > /tmp/mission.txt          # macOS : le presse-papier
+fp lead --company "Nom du client" \
+        --url "https://lien-de-loffre" \
+        --title "Le titre de la mission" \
+        --rate "800 EUR" \
+        --kind freelance \
+        --note-file /tmp/mission.txt
+
+# 4. tu génères la réponse
+fp propose 36
+
+# 5. tu la relis, tu la corriges, tu l'envoies
+fp status 36 applied
+```
+
+### Les règles qui font la différence
+
+1. **Réponds dans les 2 heures.** Sur une offre publiée, la moitié des contacts arrivent
+   dans la première journée. Après 48 h, tu n'existes plus.
+2. **Réponds à la question posée.** Si l'annonce demande « quelle est votre approche pour
+   le scraping ? », tu y réponds à la première ligne. Pas de présentation générale.
+3. **Ne t'aligne pas sur le prix le plus bas.** Il y a toujours quelqu'un pour proposer
+   moins cher. Propose un **périmètre plus petit** au même prix, ou un premier livrable
+   rapide.
+4. **Une question concrète à la fin.** « Quel volume de rapports par mois ? » ouvre la
+   conversation ; « êtes-vous disponible pour un appel ? » la ferme.
+5. **Relance une fois à J+3.** Une phrase. Polie, sans pression.
+
+### Le piège à éviter
+
+Une offre avec un budget de 300 € pour « un site e-commerce complet avec paiement » n'est
+pas une offre : c'est un piège. Filtre : si le budget est inférieur à 40 € de l'heure
+estimée, passe. Le temps que tu perds dessus, tu ne le passes pas à chercher un vrai client.
+
+---
+
 ## 1. Où trouver des prospects (sans scraping, sans spam)
 
 Tout est public et consultable à la main. Tu notes, tu ne copies pas en masse.

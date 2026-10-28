@@ -21,8 +21,8 @@ def _prompt(offer: dict, cfg: Config, score_row: dict | None) -> str:
     kind = (
         "This is COLD OUTREACH to a company you found yourself, not a reply to a job post. "
         "Open with the specific thing you observed about them."
-        if offer.get("source") == "manual"
-        else "This is a reply to a published job post. Show you read it."
+        if offer.get("job_type") == "outreach"
+        else "This is a reply to a published job post. Show you read it, and answer what was actually asked."
     )
     return f"""FREELANCER
 Name: {p.name}
@@ -70,7 +70,7 @@ Reply exactly:
 def _offline(offer: dict, cfg: Config) -> dict:
     title = offer.get("title", "your project")
     skills = ", ".join(cfg.profile.skills[:3])
-    if offer.get("source") == "manual":
+    if offer.get("job_type") == "outreach":
         opening = (
             f"Hi,\n\n"
             f"I had a look at {offer.get('company', 'your site')} and noticed this: "

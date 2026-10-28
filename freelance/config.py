@@ -31,7 +31,7 @@ github = ""
 linkedin = ""
 
 [filters]
-sources = ["remotive", "himalayas", "remoteok"]
+sources = ["codeur", "remotive", "himalayas", "remoteok"]
 job_types = ["contract", "freelance", "contractor"]
 allow_unknown_type = true
 exclude_keywords = ["unpaid", "equity only", "commission only", "internship", "volunteer"]
@@ -55,7 +55,9 @@ class Profile:
 
 @dataclass
 class Filters:
-    sources: list[str] = field(default_factory=lambda: ["remotive", "himalayas", "remoteok"])
+    sources: list[str] = field(
+        default_factory=lambda: ["codeur", "remotive", "himalayas", "remoteok"]
+    )
     job_types: list[str] = field(default_factory=lambda: ["contract", "freelance", "contractor"])
     allow_unknown_type: bool = True
     exclude_keywords: list[str] = field(default_factory=list)

@@ -17,11 +17,19 @@ rate = "EUR 500-900 fixed price per project"
 skills = [
   "Python",
   "automation",
+  "automatisation",
+  "developpeur",
+  "developpement",
   "web",
+  "site internet",
   "data",
+  "donnees",
   "API",
   "scraping",
   "dashboard",
+  "tableau de bord",
+  "integration",
+  "migration",
 ]
 
 # Indispensable : sans lien, les propositions sont faibles.
@@ -31,7 +39,7 @@ github = "https://github.com/ton-compte"
 linkedin = "https://www.linkedin.com/in/ton-compte"
 
 [filters]
-sources = ["remotive", "himalayas", "remoteok"]
+sources = ["codeur", "remotive", "himalayas", "remoteok"]
 job_types = ["contract", "freelance", "contractor"]
 allow_unknown_type = true
 exclude_keywords = [

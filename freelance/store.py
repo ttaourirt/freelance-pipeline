@@ -83,16 +83,20 @@ def upsert_offers(conn: sqlite3.Connection, offers: list[dict]) -> int:
     return inserted
 
 
-def add_manual(conn, company: str, url: str, note: str, title: str = "", rate: str = "") -> int:
-    """Ajoute un prospect trouve a la main (demarchage direct)."""
-    external_id = f"manual-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+def add_manual(conn, company: str, url: str, note: str, title: str = "", rate: str = "", kind: str = "outreach") -> int:
+    """Ajoute a la main soit un prospect (demarchage), soit une offre publiee.
+
+    kind='outreach' : tu as trouve l'entreprise et observe un probleme.
+    kind='freelance' : l'entreprise a publie une offre, tu y reponds.
+    """
+    external_id = f"manual-{datetime.now().strftime('%Y%m%d%H%M%S%f')}"
     cur = conn.execute(
         """INSERT INTO offers
         (source, external_id, title, company, url, job_type, location, salary,
          tags, description, published_at, fetched_at)
-        VALUES ('manual', ?, ?, ?, ?, 'outreach', 'direct', ?, '', ?, ?, ?)""",
+        VALUES ('manual', ?, ?, ?, ?, ?, 'direct', ?, '', ?, ?, ?)""",
         (
-            external_id, title or f"Prospect: {company}", company, url, rate,
+            external_id, title or f"Prospect: {company}", company, url, kind, rate,
             note, datetime.now(timezone.utc).date().isoformat(), _now(),
         ),
     )

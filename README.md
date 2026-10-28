@@ -22,17 +22,20 @@ Ce que les sources publiques contiennent réellement :
 
 | Source | Contenu | Volume utile |
 | --- | --- | --- |
+| **Codeur.com** (RSS) | **missions freelance françaises**, budget affiché | ~35 offres par passage, **la plupart exploitables** |
 | Remotive | API publique, remote | ~9 offres/req, peu de freelance |
 | Himalayas | API publique, remote | ~100 offres, majoritairement plein temps |
 | RemoteOK | API publique, remote | ~99 offres, majoritairement plein temps |
 
-Sur ~110 offres récupérées, **3 à 6 méritent une candidature**. C'est normal : ces flux
-sont des job boards d'emploi, pas des marketplaces de missions.
+Les trois dernières sont des job boards d'emploi : sur ~110 offres récupérées, **3 à 6
+méritent une candidature**. Codeur est la seule source de vraies missions.
 
 **Donc l'outil est bon pour deux choses :**
 
-1. **Les contrats remote** qui passent de temps en temps (missions de 1-3 mois).
-2. **La prospection directe** (`fp lead`), qui reste ta vraie source de chiffre d'affaires.
+1. **Répondre aux missions Codeur** (`fp fetch --sources codeur`), et à celles que tu
+   récupères à la main sur Malt / ComeUp (`fp lead --kind freelance`).
+2. **La prospection directe** (`fp lead`), qui reste ta source de chiffre d'affaires la
+   plus prévisible.
 
 ## Installation
 

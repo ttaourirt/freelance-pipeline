@@ -18,9 +18,17 @@ RED_FLAG_PATTERNS = [
 ]
 
 TECH_TERMS = [
+    # anglais
     "python", "automation", "automate", "scraping", "scraper", "api", "etl",
     "backend", "frontend", "web", "django", "flask", "fastapi", "node", "react",
     "sql", "postgres", "dashboard", "integration", "script", "bot", "data",
+    # francais (les offres Codeur sont en FR)
+    "developpeur", "développeur", "developpement", "développement", "automatisation",
+    "automatiser", "donnees", "données", "base de donnees", "base de données",
+    "site internet", "site web", "application", "logiciel", "migration", "refonte",
+    "maintenance", "integration", "intégration", "tableau de bord", "reporting",
+    "symfony", "wordpress", "shopify", "flutter", "serveur", "sauvegarde",
+    "extraction", "formulaire", "crm", "erp", "api rest",
 ]
 
 # Metiers qui n'ont rien a voir avec l'offre : a moins d'etre explicitement dans les skills
@@ -99,10 +107,9 @@ def keyword_score(offer, cfg: Config) -> dict:
         score -= 15
         red_flags.append("salaire annuel = poste salarie, pas une mission")
 
-    if not relevant:
-        score = min(score, 30) if kind != "outreach" else score
-        if kind != "outreach":
-            reasons.append("aucun signal technique dans le titre")
+    if not relevant and (offer.get("source", "") if isinstance(offer, dict) else offer["source"]) != "manual":
+        score = min(score, 30)
+        reasons.append("aucun signal technique dans le titre")
 
     score = max(0, min(100, score))
     verdict = "apply" if score >= 70 else ("maybe" if score >= 50 else "skip")

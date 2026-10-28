@@ -166,12 +166,25 @@ def cmd_status(args) -> int:
 
 
 def cmd_lead(args) -> int:
+    note = args.note or ""
+    if args.note_file:
+        if args.note_file == "-":
+            note = sys.stdin.read()
+        else:
+            from pathlib import Path
+
+            note = Path(args.note_file).read_text(encoding="utf-8")
+    if not note.strip():
+        print("Note vide : utilise --note ou --note-file (ou - pour coller depuis stdin).")
+        return 2
+
     conn = store.connect()
     offer_id = store.add_manual(
-        conn, company=args.company, url=args.url or "", note=args.note or "",
-        title=args.title or "", rate=args.rate or "",
+        conn, company=args.company, url=args.url or "", note=note,
+        title=args.title or "", rate=args.rate or "", kind=args.kind,
     )
-    print(f"Prospect ajoute: #{offer_id} — {args.company}")
+    kind_label = "offre publiee" if args.kind == "freelance" else "prospect direct"
+    print(f"{kind_label} ajoute: #{offer_id} — {args.company}")
     print(f"Ensuite: score --limit 1 puis propose {offer_id}")
     return 0
 
@@ -234,12 +247,17 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--proposal")
     p.set_defaults(func=cmd_status)
 
-    p = sub.add_parser("lead", help="Ajouter un prospect trouve a la main")
+    p = sub.add_parser("lead", help="Ajouter un prospect ou une offre publiee")
     p.add_argument("--company", required=True)
     p.add_argument("--url")
-    p.add_argument("--note", help="Ce que tu as observe de concret chez lui")
-    p.add_argument("--title", help="Intitule de la mission imaginee")
+    p.add_argument("--note", help="Ce que tu as observe / le texte de l'offre")
+    p.add_argument("--note-file", help="Fichier contenant le texte (ou - pour stdin)")
+    p.add_argument("--title", help="Intitule de la mission")
     p.add_argument("--rate", help="Budget envisage")
+    p.add_argument(
+        "--kind", choices=["outreach", "freelance"], default="outreach",
+        help="outreach = demarchage direct (defaut) | freelance = reponse a une offre publiee",
+    )
     p.set_defaults(func=cmd_lead)
 
     p = sub.add_parser("followups", help="Relances a envoyer")

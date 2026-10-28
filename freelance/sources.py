@@ -3,7 +3,9 @@ from __future__ import annotations
 
 import html
 import re
+import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 
 import requests
 
@@ -155,7 +157,61 @@ def fetch_remoteok(limit: int = 120) -> list[dict]:
     return offers
 
 
+def fetch_codeur(limit: int = 40) -> list[dict]:
+    """Flux RSS public de Codeur.com : projets freelance francophones, mis a jour en continu.
+
+    C'est la seule source de ce projet qui contient de vraies offres de mission
+    (les autres sont des job boards d'emploi salarie).
+    """
+    resp = _get("https://www.codeur.com/projects.rss")
+    try:
+        root = ET.fromstring(resp.content)
+    except ET.ParseError as exc:
+        raise ValueError(f"RSS illisible: {exc}") from exc
+
+    offers = []
+    for item in root.iter("item"):
+        if len(offers) >= limit:
+            break
+        link = (item.findtext("link") or "").strip()
+        title = html.unescape((item.findtext("title") or "").strip())
+        if not link or not title:
+            continue
+
+        raw_date = item.findtext("pubDate")
+        published = ""
+        if raw_date:
+            try:
+                published = parsedate_to_datetime(raw_date).isoformat()
+            except (TypeError, ValueError):
+                published = ""
+
+        description = _clean(item.findtext("description") or "", limit=2500)
+        budget = ""
+        match = re.search(r"Budget\s*:\s*([^\n]+?)(?:\s*-\s*Categories|\s*-\s*Catégories|$)", description)
+        if match:
+            budget = match.group(1).strip()
+
+        offers.append(
+            {
+                "source": "codeur",
+                "external_id": (item.findtext("guid") or link).strip(),
+                "title": title,
+                "company": "",  # anonyme sur le flux public
+                "url": link,
+                "job_type": "freelance",
+                "location": "France / remote",
+                "salary": budget,
+                "tags": "",
+                "description": description,
+                "published_at": published,
+            }
+        )
+    return offers
+
+
 FETCHERS = {
+    "codeur": fetch_codeur,
     "remotive": fetch_remotive,
     "himalayas": fetch_himalayas,
     "remoteok": fetch_remoteok,
