@@ -145,9 +145,9 @@ def cmd_propose(args) -> int:
         print(f"Offre {args.id} introuvable.")
         return 1
     offer = dict(row)
-    result = proposal.generate(offer, cfg, offer)
+    result = proposal.generate(offer, cfg, offer, lang=args.lang)
     path = proposal.save(offer, result, cfg, offer)
-    print(f"\nProposition -> {path}\n")
+    print(f"\nProposition -> {path}\n\nlangue detectee : {result.get('lang')}")
     print(result.get("message", ""))
     print("\n--- a verifier avant d'envoyer ---")
     for gap in cfg.profile_gaps():
@@ -239,6 +239,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("propose", help="Generer la proposition")
     p.add_argument("id", type=int)
+    p.add_argument(
+        "--lang", choices=["auto", "fr", "en"], default="auto",
+        help="Langue du message (auto = detectee depuis l'annonce)",
+    )
     p.set_defaults(func=cmd_propose)
 
     p = sub.add_parser("status", help="Changer le statut d'une offre")

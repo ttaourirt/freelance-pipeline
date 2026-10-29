@@ -1,6 +1,7 @@
 """Generation des propositions (message court, concret, verifiable)."""
 from __future__ import annotations
 
+import re
 from datetime import datetime
 from pathlib import Path
 
@@ -14,8 +15,24 @@ SYSTEM = (
     "Reply with JSON only."
 )
 
+FRENCH_MARKERS = {
+    "le", "la", "les", "de", "des", "du", "un", "une", "pour", "avec", "nous",
+    "vous", "recherche", "recherchons", "projet", "site", "bonjour", "merci",
+    "sur", "dans", "est", "notre", "votre", "nous", "et", "ou", "au", "aux",
+}
 
-def _prompt(offer: dict, cfg: Config, score_row: dict | None) -> str:
+
+def detect_lang(offer: dict) -> str:
+    """Detecte la langue de l'annonce (fr ou en) a partir de mots outils."""
+    text = f"{offer.get('title', '')} {offer.get('description', '')}".lower()
+    words = re.findall(r"[a-zà-ÿ']+", text)
+    if not words:
+        return "en"
+    hits = sum(1 for word in words if word in FRENCH_MARKERS)
+    return "fr" if hits >= 4 else "en"
+
+
+def _prompt(offer: dict, cfg: Config, score_row: dict | None, lang: str = "en") -> str:
     p = cfg.profile
     angle = (score_row or {}).get("angle") or ""
     kind = (
@@ -24,6 +41,7 @@ def _prompt(offer: dict, cfg: Config, score_row: dict | None) -> str:
         if offer.get("job_type") == "outreach"
         else "This is a reply to a published job post. Show you read it, and answer what was actually asked."
     )
+    language = "French" if lang == "fr" else "English"
     return f"""FREELANCER
 Name: {p.name}
 Positioning: {p.positioning}
@@ -31,6 +49,7 @@ Skills: {', '.join(p.skills)}
 Rate: {p.rate}
 Portfolio: {', '.join(p.portfolio) or 'none yet'}
 GitHub: {p.github or 'none'}
+Languages: {', '.join(p.languages)}
 
 CONTEXT
 {kind}
@@ -39,11 +58,12 @@ TARGET / OFFER
 Title: {offer.get('title','')}
 Company: {offer.get('company','')}
 URL: {offer.get('url','')}
+Budget: {offer.get('salary','') or 'not stated'}
 Details:
 {(offer.get('description','') or '')[:2500]}
 Suggested angle: {angle or 'not provided'}
 
-Write a message in ENGLISH, 110-150 words maximum.
+Write a message in {language}, 110-150 words maximum.
 
 Structure:
 1. One line showing you understood their actual problem (reference something specific in their post).
@@ -67,10 +87,43 @@ Reply exactly:
   "follow_up": "one sentence"}}"""
 
 
-def _offline(offer: dict, cfg: Config) -> dict:
-    title = offer.get("title", "your project")
+def _offline(offer: dict, cfg: Config, lang: str = "en") -> dict:
+    title = offer.get("title", "")
     skills = ", ".join(cfg.profile.skills[:3])
-    if offer.get("job_type") == "outreach":
+    cold = offer.get("job_type") == "outreach"
+
+    if lang == "fr":
+        if cold:
+            message = (
+                "Bonjour,\n\n"
+                f"En regardant {offer.get('company') or 'votre site'}, j'ai remarqué ceci : "
+                f"{(offer.get('description', '') or '')[:180].strip()}\n\n"
+                "C'est le genre de chose que je règle. Je fais du "
+                f"{skills}, en étapes courtes : quelque chose qui tourne, votre retour, puis la suite. "
+                "Prix fixe, annoncé avant de commencer.\n\n"
+                "Est-ce que c'est à traiter ce mois-ci ?\n\n"
+                f"{cfg.profile.name}"
+            )
+        else:
+            message = (
+                "Bonjour,\n\n"
+                f"J'ai lu votre annonce « {title} ». Je commencerais par le point bloquant, "
+                "pas par tout le périmètre.\n\n"
+                f"Je fais du {skills}, en étapes courtes : une première version qui tourne, "
+                "votre retour, puis la suite. Prix fixe, annoncé avant de commencer.\n\n"
+                "Quelle est la contrainte principale côté délai ?\n\n"
+                f"{cfg.profile.name}"
+            )
+        return {
+            "subject": f"{title[:45]} — votre annonce",
+            "message": message,
+            "first_step": "une première version qui tourne sur le cas principal",
+            "question": "Quelle est la contrainte principale côté délai ?",
+            "follow_up": "Je me permets un petit rappel : je peux vous détailler ma première étape si besoin.",
+            "provider": "offline",
+        }
+
+    if cold:
         opening = (
             f"Hi,\n\n"
             f"I had a look at {offer.get('company', 'your site')} and noticed this: "
@@ -101,15 +154,20 @@ def _offline(offer: dict, cfg: Config) -> dict:
     }
 
 
-def generate(offer: dict, cfg: Config, score_row: dict | None = None) -> dict:
+def generate(offer: dict, cfg: Config, score_row: dict | None = None, lang: str = "auto") -> dict:
+    resolved = detect_lang(offer) if lang == "auto" else lang
     if llm.resolve_provider(cfg) == "offline":
-        return _offline(offer, cfg)
+        result = _offline(offer, cfg, resolved)
+        result["lang"] = resolved
+        return result
     try:
-        data = llm.chat_json(_prompt(offer, cfg, score_row), SYSTEM, cfg)
+        data = llm.chat_json(_prompt(offer, cfg, score_row, resolved), SYSTEM, cfg)
         data["provider"] = llm.resolve_provider(cfg)
+        data["lang"] = resolved
         return data
     except llm.LLMError as exc:
-        result = _offline(offer, cfg)
+        result = _offline(offer, cfg, resolved)
+        result["lang"] = resolved
         result["reasons"] = [f"LLM indisponible ({exc})"]
         return result
 
@@ -124,7 +182,7 @@ def render(offer: dict, proposal: dict, cfg: Config, score_row: dict | None = No
 **{offer.get('title','')}** — {offer.get('company','')}
 <{offer.get('url','')}>
 Score : {(score_row or {}).get('score', '?')}/100 — {(score_row or {}).get('verdict','?')}
-Genere le {datetime.now().strftime('%Y-%m-%d %H:%M')} ({proposal.get('provider','?')})
+Genere le {datetime.now().strftime('%Y-%m-%d %H:%M')} ({proposal.get('provider','?')} · {proposal.get('lang','?')})
 
 ## A verifier avant d'envoyer
 
