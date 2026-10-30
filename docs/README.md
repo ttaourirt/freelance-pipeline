@@ -70,7 +70,7 @@ URL en `*.pages.dev`, personnalisable avec ton domaine.
 ## Aperçu local
 
 ```bash
-cd site && python3 -m http.server 8000
+cd docs && python3 -m http.server 8000
 # http://localhost:8000
 ```
 
