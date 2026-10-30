@@ -46,7 +46,7 @@ grep -n "example.com\|your-account\|Taourirt" index.html
 ### Option 1 — GitHub Pages (recommandé, gratuit à vie)
 
 ```bash
-cd site
+cd docs
 git init
 git add index.html
 git commit -m "Service page"
@@ -60,12 +60,12 @@ URL : `https://TON-COMPTE.github.io/service-page/`
 
 ### Option 2 — Cloudflare Pages
 
-`dash.cloudflare.com` → Workers & Pages → Create → Pages → Upload assets → glisse `site/`.
+`dash.cloudflare.com` → Workers & Pages → Create → Pages → Upload assets → glisse `docs/`.
 URL en `*.pages.dev`, personnalisable avec ton domaine.
 
 ### Option 3 — Netlify Drop
 
-`app.netlify.com/drop` → glisse le dossier `site/`. Le plus rapide pour tester.
+`app.netlify.com/drop` → glisse le dossier `docs/`. Le plus rapide pour tester.
 
 ## Aperçu local
 

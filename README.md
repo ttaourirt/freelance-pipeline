@@ -105,15 +105,15 @@ quoi écrire).
 
 ## La page de service
 
-`site/index.html` : une page statique en anglais (un seul fichier, zéro dépendance) à
-envoyer dans le premier message ou à héberger gratuitement sur GitHub Pages.
+`docs/index.html` : une page statique en anglais (un seul fichier,
+zéro dépendance) à envoyer dans le premier message ou à héberger gratuitement sur GitHub Pages.
 
 Elle contient les 2 études de cas, les 3 offres avec prix, le process et une FAQ qui
-traite l'objection « tu n'as pas de références ». Voir `site/README.md` pour la
+traite l'objection « tu n'as pas de références ». Voir `docs/README.md` pour la
 personnalisation et la mise en ligne.
 
 ```bash
-cd site && python3 -m http.server 8000   # http://localhost:8000
+cd docs && python3 -m http.server 8000   # http://localhost:8000
 ```
 
 ## Ce que la proposition contient, et pourquoi
