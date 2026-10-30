@@ -1,5 +1,8 @@
 # Page de service
 
+> **En ligne** : https://ttaourirt.github.io/freelance-pipeline/
+> (GitHub Pages, servi depuis le dossier `docs/` de la branche `main`)
+
 Une page statique, un seul fichier, zéro dépendance (pas de police Google, pas de JS,
 pas de framework). Elle s'ouvre en double-cliquant sur `index.html` et se charge en
 moins de 30 Ko.
