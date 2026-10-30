@@ -1,0 +1,21 @@
+[Unit]
+Description=Veille missions freelance (poll du flux public)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Adapte ces deux chemins a l'endroit ou tu as clone le depot
+WorkingDirectory=/opt/freelance-pipeline
+ExecStart=/opt/freelance-pipeline/.venv/bin/python -m freelance.cli watch --interval 120 --min-score 60
+Restart=always
+RestartSec=30
+# Utilisateur non privilegie
+User=fpwatch
+Group=fpwatch
+# Journalisation dans le journal systeme : journalctl -u fp-watch -f
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

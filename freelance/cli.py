@@ -198,8 +198,25 @@ def cmd_lead(args) -> int:
     return 0
 
 
-def _notify(title: str, message: str) -> None:
-    """Notification macOS, ignoree si non disponible."""
+def _notify(title: str, message: str, cfg: Config | None = None) -> None:
+    """Telegram si configure, sinon notification macOS. Ne leve jamais d'exception."""
+    cfg = cfg or _cfg()
+    if cfg.telegram_bot_token and cfg.telegram_chat_id:
+        try:
+            import requests
+
+            text = f"*{title}*\n{message}"
+            resp = requests.post(
+                f"https://api.telegram.org/bot{cfg.telegram_bot_token}/sendMessage",
+                json={"chat_id": cfg.telegram_chat_id, "text": text, "parse_mode": "Markdown"},
+                timeout=10,
+            )
+            if resp.status_code == 200:
+                return
+            print(f"  (telegram: HTTP {resp.status_code} {resp.text[:120]})")
+        except Exception as exc:  # noqa: BLE001 - on retombe sur macOS
+            print(f"  (telegram indisponible: {exc})")
+
     try:
         import subprocess
 
@@ -254,7 +271,11 @@ def _watch_cycle(conn, cfg, sources_list: list[str], min_score: int, notify: boo
             print(f"  [{stamp}] {scored['score']:>3}/100  {row['title'][:58]}")
             print(f"          {row['url']}")
             if notify:
-                _notify(f"Nouvelle mission {scored['score']}/100", f"{row['title'][:70]} — {row['salary'] or 'budget ?'}")
+                _notify(
+                    f"Nouvelle mission {scored['score']}/100",
+                    f"{row['title'][:70]}\n{row['salary'] or 'budget ?'}\n{row['url']}",
+                    cfg,
+                )
     conn.commit()
     return results
 

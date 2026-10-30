@@ -75,6 +75,8 @@ class Config:
     gemini_api_key: str = ""
     gemini_model: str = "gemini-2.0-flash"
     provider: str = "auto"
+    telegram_bot_token: str = ""
+    telegram_chat_id: str = ""
 
     @classmethod
     def load(cls) -> "Config":
@@ -92,6 +94,8 @@ class Config:
             gemini_api_key=os.environ.get("GEMINI_API_KEY", ""),
             gemini_model=os.environ.get("GEMINI_MODEL", "gemini-2.0-flash"),
             provider=os.environ.get("LLM_PROVIDER", "auto"),
+            telegram_bot_token=os.environ.get("TELEGRAM_BOT_TOKEN", ""),
+            telegram_chat_id=os.environ.get("TELEGRAM_CHAT_ID", ""),
         )
 
     def profile_gaps(self) -> list[str]:
