@@ -42,20 +42,69 @@ def connect() -> sqlite3.Connection:
     conn = sqlite3.connect(DB_FILE)
     conn.row_factory = sqlite3.Row
     conn.executescript(SCHEMA)
+    _migrate(conn)
     return conn
+
+
+def _migrate(conn: sqlite3.Connection) -> None:
+    """Petites migrations idempotentes, versionnees avec PRAGMA user_version."""
+    version = conn.execute("PRAGMA user_version").fetchone()[0]
+    if version < 1:
+        # Les titres issus du flux RSS contenaient des entites HTML (&#39;).
+        import html as _html
+
+        rows = conn.execute("SELECT id, title FROM offers").fetchall()
+        for row in rows:
+            fixed = _html.unescape(row["title"] or "")
+            if fixed != row["title"]:
+                conn.execute("UPDATE offers SET title = ? WHERE id = ?", (fixed, row["id"]))
+        conn.execute("PRAGMA user_version = 1")
+        conn.commit()
 
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
-def is_relevant(offer: dict, job_types: list[str], exclude_keywords: list[str], allow_unknown: bool) -> tuple[bool, str]:
+def _parse_date(value: str) -> datetime | None:
+    if not value:
+        return None
+    text = value.strip().replace("Z", "+00:00")
+    try:
+        parsed = datetime.fromisoformat(text)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed
+
+
+def offer_age_days(published_at: str) -> int | None:
+    parsed = _parse_date(published_at)
+    if parsed is None:
+        return None
+    return (datetime.now(timezone.utc) - parsed).days
+
+
+def is_relevant(
+    offer: dict,
+    job_types: list[str],
+    exclude_keywords: list[str],
+    allow_unknown: bool,
+    max_age_days: int = 0,
+) -> tuple[bool, str]:
     kind = offer.get("job_type", "unknown")
     if kind == "unknown":
         if not allow_unknown:
             return False, "type inconnu"
     elif kind not in job_types:
         return False, f"type {kind}"
+
+    if max_age_days > 0:
+        age = offer_age_days(offer.get("published_at", ""))
+        if age is not None and age > max_age_days:
+            return False, f"annonce perimee ({age} j)"
+
     blob = f"{offer.get('title','')} {offer.get('description','')[:1500]}".lower()
     for word in exclude_keywords:
         if word.lower() in blob:
@@ -102,6 +151,25 @@ def add_manual(conn, company: str, url: str, note: str, title: str = "", rate: s
     )
     conn.commit()
     return int(cur.lastrowid)
+
+
+def prune_stale(conn: sqlite3.Connection, max_age_days: int) -> int:
+    """Supprime les annonces perimees jamais utilisees (aucune candidature liee)."""
+    if max_age_days <= 0:
+        return 0
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=max_age_days)).isoformat()
+    rows = conn.execute(
+        """SELECT id, published_at FROM offers o
+        WHERE NOT EXISTS (SELECT 1 FROM applications a WHERE a.offer_id = o.id)"""
+    ).fetchall()
+    removed = 0
+    for row in rows:
+        parsed = _parse_date(row["published_at"])
+        if parsed is not None and parsed.isoformat() < cutoff:
+            conn.execute("DELETE FROM offers WHERE id = ?", (row["id"],))
+            removed += 1
+    conn.commit()
+    return removed
 
 
 def unscored(conn: sqlite3.Connection, limit: int) -> list[sqlite3.Row]:

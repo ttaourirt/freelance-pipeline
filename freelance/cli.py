@@ -46,14 +46,18 @@ def cmd_fetch(args) -> int:
     kept, dropped = [], {}
     for offer in found:
         ok, reason = store.is_relevant(
-            offer, cfg.filters.job_types, cfg.filters.exclude_keywords, cfg.filters.allow_unknown_type
+            offer, cfg.filters.job_types, cfg.filters.exclude_keywords,
+            cfg.filters.allow_unknown_type, cfg.filters.max_age_days,
         )
         if ok:
             kept.append(offer)
         else:
             dropped[reason] = dropped.get(reason, 0) + 1
     inserted = store.upsert_offers(conn, kept)
+    pruned = store.prune_stale(conn, cfg.filters.max_age_days)
     print(f"\n  retenues : {len(kept)} | nouvelles en base : {inserted}")
+    if pruned:
+        print(f"  purgees  : {pruned} annonces de plus de {cfg.filters.max_age_days} jours")
     if dropped and args.verbose:
         for reason, count in sorted(dropped.items(), key=lambda x: -x[1]):
             print(f"    ecartees ({reason}): {count}")
@@ -90,14 +94,16 @@ def cmd_list(args) -> int:
     if not rows:
         print("Aucune offre. Lance `fetch` puis `score`.")
         return 0
-    print(f"{'ID':>4}  {'SCORE':>5}  {'TYPE':<10} {'SOURCE':<10} TITRE")
-    print("-" * 96)
+    print(f"{'ID':>4}  {'SCORE':>5}  {'AGE':>4}  {'TYPE':<10} {'SOURCE':<10} TITRE")
+    print("-" * 100)
     for row in rows:
         value = row["score"] if row["score"] is not None else "-"
         status = row["status"] or "new"
+        age = store.offer_age_days(row["published_at"])
+        age_label = f"{age}j" if age is not None else "-"
         print(
-            f"{row['id']:>4}  {str(value):>5}  {row['job_type'][:10]:<10} "
-            f"{row['source'][:10]:<10} {row['title'][:44]:<44} {status}"
+            f"{row['id']:>4}  {str(value):>5}  {age_label:>4}  {row['job_type'][:10]:<10} "
+            f"{row['source'][:10]:<10} {row['title'][:42]:<42} {status}"
         )
     print(f"\n{len(rows)} offre(s). `show <id>` pour le detail.")
     return 0

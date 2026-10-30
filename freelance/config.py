@@ -62,6 +62,8 @@ class Filters:
     allow_unknown_type: bool = True
     exclude_keywords: list[str] = field(default_factory=list)
     min_score: int = 55
+    # Une annonce plus vieille que ca est consideree comme morte.
+    max_age_days: int = 30
 
 
 @dataclass
