@@ -2,9 +2,12 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
+import time
+from datetime import datetime
 
-from . import llm, proposal, score, sources, store
+from . import dashboard, llm, proposal, score, sources, store
 from .config import Config
 
 STATUSES = ["new", "applied", "replied", "won", "lost", "skipped"]
@@ -195,6 +198,100 @@ def cmd_lead(args) -> int:
     return 0
 
 
+def _notify(title: str, message: str) -> None:
+    """Notification macOS, ignoree si non disponible."""
+    try:
+        import subprocess
+
+        subprocess.run(
+            ["osascript", "-e",
+             f'display notification {json.dumps(message)} with title {json.dumps(title)} sound name "Glass"'],
+            check=False, capture_output=True, timeout=10,
+        )
+    except Exception:  # noqa: BLE001 - une notification ratee ne doit rien casser
+        pass
+
+
+def _watch_cycle(conn, cfg, sources_list: list[str], min_score: int, notify: bool) -> list[dict]:
+    known = {src: store.known_ids(conn, src) for src in sources_list}
+    found = sources.fetch_all(sources_list, log=lambda *_a, **_k: None)
+
+    fresh: list[dict] = []
+    for offer in found:
+        src = offer.get("source", "")
+        if offer.get("external_id") in known.get(src, set()):
+            continue
+        ok, _reason = store.is_relevant(
+            offer, cfg.filters.job_types, cfg.filters.exclude_keywords,
+            cfg.filters.allow_unknown_type, cfg.filters.max_age_days,
+        )
+        if not ok:
+            continue
+        fresh.append(offer)
+
+    if not fresh:
+        return []
+
+    store.upsert_offers(conn, fresh)
+    results = []
+    for offer in fresh:
+        row = conn.execute(
+            "SELECT * FROM offers WHERE source = ? AND external_id = ?",
+            (offer["source"], offer["external_id"]),
+        ).fetchone()
+        if row is None:
+            continue
+        scored = score.score_offer(row, cfg)
+        store.save_score(
+            conn, row["id"], scored["score"], scored["verdict"],
+            scored["reasons"], scored["red_flags"], scored["angle"],
+        )
+        entry = {"id": row["id"], "title": row["title"], "url": row["url"],
+                 "budget": row["salary"], "score": scored["score"]}
+        results.append(entry)
+        if scored["score"] >= min_score:
+            stamp = datetime.now().strftime("%H:%M:%S")
+            print(f"  [{stamp}] {scored['score']:>3}/100  {row['title'][:58]}")
+            print(f"          {row['url']}")
+            if notify:
+                _notify(f"Nouvelle mission {scored['score']}/100", f"{row['title'][:70]} — {row['salary'] or 'budget ?'}")
+    conn.commit()
+    return results
+
+
+def cmd_watch(args) -> int:
+    cfg = _cfg()
+    conn = store.connect()
+    interval = max(60, args.interval)
+    print(f"Veille demarree sur {', '.join(args.sources)} — toutes les {interval}s")
+    print("Ctrl+C pour arreter. Seules les annonces inedites sont scorees.\n")
+    cycles = 0
+    try:
+        while True:
+            cycles += 1
+            new = _watch_cycle(conn, cfg, args.sources, args.min_score, notify=not args.no_notify)
+            path = dashboard.write(conn)
+            if new:
+                print(f"  {len(new)} nouvelle(s) — tableau de bord : {path}\n")
+            if args.once:
+                break
+            time.sleep(interval)
+    except KeyboardInterrupt:
+        print("\nVeille arretee.")
+    return 0
+
+
+def cmd_dashboard(args) -> int:
+    conn = store.connect()
+    path = dashboard.write(conn)
+    print(f"Tableau de bord : {path}")
+    if args.open:
+        import subprocess
+
+        subprocess.run(["open", str(path)], check=False)
+    return 0
+
+
 def cmd_followups(_args) -> int:
     conn = store.connect()
     rows = store.due_follow_ups(conn)
@@ -270,9 +367,20 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_lead)
 
+    p = sub.add_parser("watch", help="Veille en continu : detecte les nouvelles annonces")
+    p.add_argument("--interval", type=int, default=300, help="Secondes entre deux passages (defaut 300)")
+    p.add_argument("--sources", nargs="*", default=["codeur"])
+    p.add_argument("--min-score", type=int, default=60, help="Seuil de notification")
+    p.add_argument("--no-notify", action="store_true", help="Pas de notification macOS")
+    p.add_argument("--once", action="store_true", help="Un seul passage puis sortie")
+    p.set_defaults(func=cmd_watch)
+
+    p = sub.add_parser("dashboard", help="Generer et ouvrir le tableau de bord")
+    p.add_argument("--open", action="store_true", help="Ouvre dans le navigateur")
+    p.set_defaults(func=cmd_dashboard)
+
     p = sub.add_parser("followups", help="Relances a envoyer")
     p.set_defaults(func=cmd_followups)
-
     p = sub.add_parser("stats", help="Statistiques")
     p.set_defaults(func=cmd_stats)
     return parser

@@ -132,6 +132,14 @@ def upsert_offers(conn: sqlite3.Connection, offers: list[dict]) -> int:
     return inserted
 
 
+def known_ids(conn: sqlite3.Connection, source: str) -> set[str]:
+    """Identifiants deja en base pour une source (detection des nouveautes)."""
+    rows = conn.execute(
+        "SELECT external_id FROM offers WHERE source = ?", (source,)
+    ).fetchall()
+    return {row["external_id"] for row in rows}
+
+
 def add_manual(conn, company: str, url: str, note: str, title: str = "", rate: str = "", kind: str = "outreach") -> int:
     """Ajoute a la main soit un prospect (demarchage), soit une offre publiee.
 
