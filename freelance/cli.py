@@ -313,6 +313,78 @@ def cmd_dashboard(args) -> int:
     return 0
 
 
+def _set_env_value(key: str, value: str) -> bool:
+    """Ecrit KEY=value dans .env sans toucher au reste du fichier."""
+    from .config import ROOT
+
+    path = ROOT / ".env"
+    if not path.exists():
+        return False
+    lines = path.read_text(encoding="utf-8").splitlines()
+    found = False
+    for index, line in enumerate(lines):
+        if line.startswith(f"{key}="):
+            lines[index] = f"{key}={value}"
+            found = True
+            break
+    if not found:
+        lines.append(f"{key}={value}")
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return True
+
+
+def cmd_telegram(_args) -> int:
+    """Trouve automatiquement le chat Telegram et envoie un message de test."""
+    cfg = _cfg()
+    if not cfg.telegram_bot_token:
+        print("Il manque le token du bot.\n")
+        print("  1. Telegram → cherche @BotFather → /newbot")
+        print("  2. Choisis un nom, puis un identifiant terminé par 'bot'")
+        print("  3. BotFather renvoie un code du type 8123456789:AAH...")
+        print("  4. Colle-le dans .env : TELEGRAM_BOT_TOKEN=8123456789:AAH...")
+        print("  5. Envoie 'bonjour' à ton bot, puis relance : fp telegram")
+        return 2
+
+    import requests
+
+    try:
+        resp = requests.get(
+            f"https://api.telegram.org/bot{cfg.telegram_bot_token}/getUpdates", timeout=15
+        )
+    except requests.RequestException as exc:
+        print(f"Telegram injoignable : {exc}")
+        return 1
+
+    if resp.status_code == 401:
+        print("Token refuse par Telegram. Vérifie qu'il est complet et collé sans espace.")
+        return 1
+    if resp.status_code != 200:
+        print(f"Telegram a répondu HTTP {resp.status_code}")
+        return 1
+
+    chats = []
+    for update in resp.json().get("result", []):
+        message = update.get("message") or update.get("edited_message") or {}
+        chat = message.get("chat") or {}
+        if chat.get("id"):
+            chats.append((str(chat["id"]), chat.get("first_name") or chat.get("username") or ""))
+
+    if not chats:
+        print("Aucun message trouvé.\n")
+        print("  Ouvre Telegram, envoie 'bonjour' à ton bot, puis relance : fp telegram")
+        return 1
+
+    chat_id, name = chats[-1]
+    print(f"Chat trouvé : {name} ({chat_id})")
+    if _set_env_value("TELEGRAM_CHAT_ID", chat_id):
+        print("TELEGRAM_CHAT_ID enregistré dans .env")
+
+    cfg.telegram_chat_id = chat_id
+    _notify("Test de la veille", "Si tu lis ceci sur ton téléphone, c'est branché.", cfg)
+    print("Message de test envoyé. Regarde ton téléphone.")
+    return 0
+
+
 def cmd_followups(_args) -> int:
     conn = store.connect()
     rows = store.due_follow_ups(conn)
@@ -399,6 +471,9 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("dashboard", help="Generer et ouvrir le tableau de bord")
     p.add_argument("--open", action="store_true", help="Ouvre dans le navigateur")
     p.set_defaults(func=cmd_dashboard)
+
+    p = sub.add_parser("telegram", help="Brancher les alertes Telegram (une seule fois)")
+    p.set_defaults(func=cmd_telegram)
 
     p = sub.add_parser("followups", help="Relances a envoyer")
     p.set_defaults(func=cmd_followups)
